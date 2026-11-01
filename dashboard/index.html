@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS-MESH-AI // Autonomous SDN Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --background: #f2f2f5;
+      --foreground: #090a0f;
+      --surface: #ffffff;
+      --surface-dim: #e9e9ed;
+      --border-tech: #121316;
+      --border-subtle: #d6d6de;
+      --cyber-orange: #ff3b00;
+      --cyber-red: #ff2a3b;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background-color: var(--background);
+      color: var(--foreground);
+      overflow-x: hidden;
+    }
+
+    .font-sans-body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* Cybercore Technical Blueprint Grid */
+    .cyber-grid {
+      background-size: 28px 28px;
+      background-image: 
+        linear-gradient(to right, rgba(18, 19, 22, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(18, 19, 22, 0.05) 1px, transparent 1px);
+    }
+
+    .cyber-grid-dense {
+      background-size: 14px 14px;
+      background-image: 
+        linear-gradient(to right, rgba(18, 19, 22, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(18, 19, 22, 0.06) 1px, transparent 1px);
+    }
+
+    /* Brutalist Tech Panels */
+    .cyber-panel {
+      background: #ffffff;
+      border: 1px solid #121316;
+      box-shadow: 2px 2px 0px #121316;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .cyber-panel-hover:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px #ff3b00;
+    }
+
+    /* Corner Crosshairs */
+    .hud-corner {
+      position: relative;
+    }
+    .hud-corner::before {
+      content: '+';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 800;
+      color: #121316;
+      line-height: 1;
+    }
+    .hud-corner::after {
+      content: '+';
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 800;
+      color: #ff3b00;
+      line-height: 1;
+    }
+
+    /* Laser scanline sweep on hover */
+    .laser-sweep {
+      position: relative;
+      overflow: hidden;
+    }
+    .laser-sweep::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #ff3b00, #ff7a00, transparent);
+      transform: translateY(-4px);
+      opacity: 0;
+      transition: transform 0.6s ease, opacity 0.3s;
+      pointer-events: none;
+    }
+    .laser-sweep:hover::before {
+      transform: translateY(140px);
+      opacity: 1;
+    }
+
+    /* Active Packet Flow Animations */
+    @keyframes flowParticle {
+      0% { stroke-dashoffset: 40; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .flow-active {
+      stroke-dasharray: 8 6;
+      animation: flowParticle 1.2s linear infinite;
+    }
+    .flow-severed {
+      stroke-dasharray: 6 6;
+    }
+
+    /* Ping animation */
+    @keyframes cyberPing {
+      0% { transform: scale(1); opacity: 1; }
+      75%, 100% { transform: scale(2.2); opacity: 0; }
+    }
+    .cyber-ping {
+      animation: cyberPing 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    /* Sleek Custom Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f2f2f5; }
+    ::-webkit-scrollbar-thumb { background: #121316; }
+    ::-webkit-scrollbar-thumb:hover { background: #ff3b00; }
+  </style>
+</head>
+<body class="cyber-grid min-h-screen flex antialiased select-none selection:bg-[#ff3b00] selection:text-white">
+
+  <!-- ===================================================================== -->
+  <!-- LEFT SIDEBAR NAVIGATION (AEGIS-MESH // SPEC.2026 CYBER THEME) -->
+  <!-- ===================================================================== -->
+  <aside class="w-64 border-r border-[#121316] bg-white flex flex-col justify-between h-screen sticky top-0 font-mono z-30 shadow-[2px_0px_0px_rgba(0,0,0,0.04)]">
+    <div>
+      <!-- Brand Header -->
+      <div class="p-4 border-b border-[#121316] bg-[#f8f8fa] flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+            <i data-lucide="zap" class="w-4 h-4 text-[#ff3b00]"></i>
+          </div>
+          <div>
+            <a href="/" class="font-black text-xs tracking-wider text-[#121316] hover:text-[#ff3b00] transition-colors flex items-center gap-1" title="Back to Landing Page">
+              <span>AEGIS-MESH</span>
+              <span class="text-[9px] text-zinc-400 font-normal">⇱</span>
+            </a>
+            <div class="text-[9px] text-zinc-500 font-bold">
+              AUTONOMOUS SDN // SPEC.2026
+            </div>
+          </div>
+        </div>
+        <span class="w-2 h-2 rounded-full bg-[#ff3b00] relative">
+          <span class="absolute inset-0 rounded-full bg-[#ff3b00] cyber-ping"></span>
+        </span>
+      </div>
+
+      <!-- Back to Landing Shortcut -->
+      <div class="px-4 py-2 border-b border-[#121316] bg-[#fdfdfd] flex items-center justify-between">
+        <a href="/" class="text-[10px] font-bold text-zinc-500 hover:text-[#ff3b00] flex items-center gap-1.5 transition-colors">
+          <i data-lucide="arrow-left" class="w-3 h-3"></i>
+          <span>← BACK TO LANDING PAGE</span>
+        </a>
+      </div>
+
+      <!-- Navigation Menu -->
+      <div class="p-3 space-y-1.5">
+        <div class="px-2 py-1 text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+          // MODULE NAVIGATION
+        </div>
+
+        <button onclick="switchTab('noc')" id="tab-noc" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border bg-[#121316] text-white border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="network" class="w-3.5 h-3.5 text-[#ff3b00]"></i>
+            <span>01 // Topology NOC</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-white text-[#121316] font-black">5 NODES</span>
+        </button>
+
+        <button onclick="switchTab('copilot')" id="tab-copilot" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="bot" class="w-3.5 h-3.5 text-[#ff3b00]"></i>
+            <span>02 // NetOps Copilot</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-[#ff3b00]/10 text-[#ff3b00] border border-[#ff3b00]/30 font-bold">GROQ 70B</span>
+        </button>
+
+        <button onclick="switchTab('postmortem')" id="tab-postmortem" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-[#121316]"></i>
+            <span>03 // SRE Incidents</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-800 border border-zinc-300 font-bold">AUTO-RCA</span>
+        </button>
+
+        <button onclick="switchTab('dissector')" id="tab-dissector" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="binary" class="w-3.5 h-3.5 text-[#ff3b00]"></i>
+            <span>04 // Wire Dissector</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700 border border-zinc-300">0x7E HEX</span>
+        </button>
+
+        <button onclick="switchTab('arq')" id="tab-arq" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="repeat" class="w-3.5 h-3.5 text-[#121316]"></i>
+            <span>05 // ARQ Sliding Buffer</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700 border border-zinc-300">Ws=Wr=8</span>
+        </button>
+
+        <button onclick="switchTab('routing')" id="tab-routing" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="git-fork" class="w-3.5 h-3.5 text-[#ff3b00]"></i>
+            <span>06 // Link-State & FIB</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700 border border-zinc-300">DIJKSTRA</span>
+        </button>
+
+        <button onclick="switchTab('acl')" id="tab-acl" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-[#ff3b00]"></i>
+            <span>07 // Dynamic ACL Rules</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-[#ff3b00]/10 text-[#ff3b00] border border-[#ff3b00]/30 font-bold">Z-TRUST</span>
+        </button>
+
+        <button onclick="switchTab('p2p')" id="tab-p2p" class="w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]">
+          <div class="flex items-center gap-2">
+            <i data-lucide="terminal" class="w-3.5 h-3.5 text-[#121316]"></i>
+            <span>08 // Socket Injector</span>
+          </div>
+          <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700 border border-zinc-300">UDP :51820</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar Bottom Technical Specifications -->
+    <div class="p-3 border-t border-[#121316] bg-[#f8f8fa] space-y-2 text-[10px]">
+      <div class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">// WIRE SPECIFICATION</div>
+      <div class="space-y-1 text-zinc-600 font-bold">
+        <div class="flex justify-between">
+          <span>Framing:</span>
+          <span class="text-[#121316]">0x7E + 0x7D Byte-Stuffing</span>
+        </div>
+        <div class="flex justify-between">
+          <span>CRC-32:</span>
+          <span class="text-[#087a38]">IEEE 802.3 Match</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Transport:</span>
+          <span class="text-[#ff3b00]">Raw UDP :51820-24</span>
+        </div>
+        <div class="flex justify-between">
+          <span>FastMCP:</span>
+          <span class="text-[#121316]">Active Controller</span>
+        </div>
+      </div>
+      <div class="pt-2 border-t border-zinc-300 flex items-center justify-between text-[9px]">
+        <span class="text-zinc-500">FABRIC STATUS:</span>
+        <span class="text-[#087a38] font-bold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#087a38]"></span> CONVERGED
+        </span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN APPLICATION VIEWPORT -->
+  <!-- ===================================================================== -->
+  <div class="flex-1 flex flex-col min-h-screen overflow-y-auto">
+
+    <!-- LIVE KINETIC TELEMETRY MARQUEE STRIP -->
+    <div class="border-b border-[#121316] bg-[#f8f8fa] text-[#121316] text-[10px] font-mono px-4 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-[0px_1px_0px_rgba(0,0,0,0.03)]">
+      <!-- Left: Real-Time Kinetic Stream Marquee -->
+      <div class="flex items-center gap-3 overflow-hidden max-w-2xl">
+        <div class="flex items-center gap-1.5 font-black text-[#ff3b00] shrink-0">
+          <span class="h-1.5 w-1.5 bg-[#ff3b00] rounded-full animate-ping" />
+          <span>REALTIME_STREAM:</span>
+        </div>
+
+        <div class="truncate text-zinc-600 space-x-3">
+          <span>
+            <strong class="text-[#121316]">GROQ LPU:</strong> <span id="telemetryTokSpeed">184.2</span> tok/s
+          </span>
+          <span class="text-zinc-300">/</span>
+          <span>
+            <strong class="text-[#121316]">DIJKSTRA SOLVE:</strong> 3.4ms
+          </span>
+          <span class="text-zinc-300">/</span>
+          <span>
+            <strong class="text-[#121316]">MTTD:</strong> 142ms
+          </span>
+          <span class="text-zinc-300">/</span>
+          <span>
+            <strong class="text-[#121316]">MTTR:</strong> 384ms
+          </span>
+          <span class="text-zinc-300">/</span>
+          <span class="text-[#087a38] font-bold inline-flex items-center gap-1">
+            <i data-lucide="shield-check" class="h-3 w-3 text-[#087a38]"></i> ZERO-TRUST ACTIVE
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Collaborator Operators Presence -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div class="flex items-center gap-1 text-zinc-500 font-bold hidden md:inline-flex">
+          <i data-lucide="users" class="h-3 w-3"></i>
+          <span>OPERATORS:</span>
+        </div>
+        <div class="flex items-center -space-x-1">
+          <div class="w-5 h-5 border border-[#121316] bg-white flex items-center justify-center text-[8px] font-black text-[#ff3b00] shadow-[1px_1px_0px_#121316]" title="Lead NetOps AI">AI</div>
+          <div class="w-5 h-5 border border-[#121316] bg-white flex items-center justify-center text-[8px] font-black text-[#087a38] shadow-[1px_1px_0px_#121316]" title="Network SRE">SR</div>
+          <div class="w-5 h-5 border border-[#121316] bg-white flex items-center justify-center text-[8px] font-black text-[#0369a1] shadow-[1px_1px_0px_#121316]" title="Examiner Audit">EX</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPBAR WITH DECRYPT TEXT -->
+    <header class="h-14 border-b border-[#121316] bg-white px-6 flex items-center justify-between sticky top-0 z-20 font-mono shadow-[0px_2px_0px_rgba(0,0,0,0.02)]">
+      <div class="flex items-center gap-3">
+        <span class="text-[10px] font-black text-white bg-[#ff3b00] border border-[#121316] px-2 py-0.5 shadow-[1px_1px_0px_#121316]">
+          <span id="breadcrumbTag">SYS://OVERVIEW</span>
+        </span>
+        <h1 class="text-xs font-black text-[#121316] tracking-wider uppercase hidden sm:inline" id="breadcrumbTitle">
+          AEGIS-MESH SDN // AUTONOMOUS COMMAND CENTER
+        </h1>
+      </div>
+
+      <!-- Right: Technical Badges & Groq Key -->
+      <div class="flex items-center gap-2.5 text-xs">
+        <div class="flex items-center gap-1.5 bg-[#f8f8fa] border border-[#121316] px-2 py-1 shadow-[1px_1px_0px_#121316]">
+          <input id="groqInput" type="password" placeholder="Groq API Key (Optional)" 
+                 class="bg-transparent border-none text-[10px] w-36 focus:outline-none text-[#121316] placeholder:text-zinc-400 font-mono font-bold">
+          <button onclick="saveGroqKey()" class="bg-[#121316] hover:bg-[#ff3b00] text-white text-[9px] px-2 py-0.5 transition font-bold">
+            SET KEY
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#121316] text-[#121316] text-[10px] font-black shadow-[2px_2px_0px_#ff3b00]">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#ff3b00] animate-pulse"></span>
+          <span>GROQ 70B MCP</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="p-6 flex-1 flex flex-col space-y-5 max-w-[1700px] w-full mx-auto">
+
+      <!-- =================================================================== -->
+      <!-- TAB 1: TOPOLOGY NOC (WHITE & ORANGE CYBERCORE) -->
+      <!-- =================================================================== -->
+      <section id="view-noc" class="flex-1 flex flex-col space-y-5">
+
+        <!-- Top Banner in Cybercore style -->
+        <div class="border border-[#121316] bg-white p-6 shadow-[3px_3px_0px_#121316] relative overflow-hidden hud-corner">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1 text-[10px]">
+                <span class="px-2 py-0.5 bg-[#ff3b00] text-white font-black uppercase shadow-[1px_1px_0px_#121316]">
+                  CYBERCORE // TELEMETRY
+                </span>
+                <span class="text-zinc-500 font-mono font-bold">SPEC.2026 // 5-NODE DISTRIBUTED FABRIC</span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-black text-[#121316] tracking-tight uppercase" id="heroHeadline">
+                Zero-Trust Mesh Command Center
+              </h2>
+              <p class="text-xs text-zinc-600 mt-1 font-sans-body max-w-2xl leading-relaxed">
+                Autonomous self-healing mesh SDN running on non-blocking raw UDP sockets. Real-time cognitive telemetry disambiguates physical wire strain from Byzantine cyber attacks and steers Link-State Dijkstra routing.
+              </p>
+            </div>
+
+            <!-- Path & Metric Callout Pill -->
+            <div class="flex items-center gap-3 bg-[#f8f8fa] p-3 border border-[#121316] shadow-[2px_2px_0px_#121316]">
+              <div class="border-r border-zinc-300 pr-3">
+                <span class="text-[9px] font-bold text-zinc-400 block uppercase">ACTIVE PATH</span>
+                <span id="routeBadge" class="text-xs font-black text-[#ff3b00]">A → B → C → E</span>
+              </div>
+              <div class="border-r border-zinc-300 pr-3">
+                <span class="text-[9px] font-bold text-zinc-400 block uppercase">PATH COST</span>
+                <span id="costBadge" class="text-xs font-black text-[#121316]">3</span>
+              </div>
+              <div>
+                <span class="text-[9px] font-bold text-zinc-400 block uppercase">DELIVERED</span>
+                <span id="deliveredBadge" class="text-xs font-black text-[#087a38]">0 pkts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 KPI METRIC CARDS (Exact Cybercore Theme) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+          <!-- Card 1 -->
+          <div class="cyber-panel p-4 laser-sweep hud-corner cyber-panel-hover">
+            <div class="flex items-center justify-between border-b border-[#e5e5eb] pb-2">
+              <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">// ALGORITHM CONVERGENCE</span>
+              <div class="p-1 border border-[#121316] bg-[#f8f8fa] text-[#ff3b00]">
+                <i data-lucide="git-commit" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-2xl font-black tracking-tight text-[#121316]">3.4 ms</div>
+              <div class="mt-2 flex items-center justify-between text-[10px] pt-2 border-t border-[#e5e5eb]">
+                <span class="font-bold px-1 py-0.5 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/30">O(E log V)</span>
+                <span class="text-zinc-500 font-sans-body">Fibonacci heap Dijkstra</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="cyber-panel p-4 laser-sweep hud-corner cyber-panel-hover">
+            <div class="flex items-center justify-between border-b border-[#e5e5eb] pb-2">
+              <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">// MEAN TIME TO DETECT (MTTD)</span>
+              <div class="p-1 border border-[#121316] bg-[#f8f8fa] text-[#121316]">
+                <i data-lucide="activity" class="w-4 h-4 text-[#ff3b00]"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-2xl font-black tracking-tight text-[#121316]">142 ms</div>
+              <div class="mt-2 flex items-center justify-between text-[10px] pt-2 border-t border-[#e5e5eb]">
+                <span class="font-bold px-1 py-0.5 bg-[#ffebee] text-[#ff3b00] border border-[#ff3b00]/30">COGNITIVE</span>
+                <span class="text-zinc-500 font-sans-body">Entropy & CRC sliding probe</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="cyber-panel p-4 laser-sweep hud-corner cyber-panel-hover">
+            <div class="flex items-center justify-between border-b border-[#e5e5eb] pb-2">
+              <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">// MEAN TIME TO REMEDIATE (MTTR)</span>
+              <div class="p-1 border border-[#121316] bg-[#f8f8fa] text-[#121316]">
+                <i data-lucide="zap" class="w-4 h-4 text-[#ff3b00]"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-2xl font-black tracking-tight text-[#121316]">384 ms</div>
+              <div class="mt-2 flex items-center justify-between text-[10px] pt-2 border-t border-[#e5e5eb]">
+                <span class="font-bold px-1 py-0.5 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/30">MCP HEALING</span>
+                <span class="text-zinc-500 font-sans-body">Fast tool execution</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="cyber-panel p-4 laser-sweep hud-corner cyber-panel-hover">
+            <div class="flex items-center justify-between border-b border-[#e5e5eb] pb-2">
+              <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">// ARQ CHANNEL UTILIZATION</span>
+              <div class="p-1 border border-[#121316] bg-[#f8f8fa] text-[#121316]">
+                <i data-lucide="repeat" class="w-4 h-4 text-[#ff3b00]"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-2xl font-black tracking-tight text-[#121316]">98.6%</div>
+              <div class="mt-2 flex items-center justify-between text-[10px] pt-2 border-t border-[#e5e5eb]">
+                <span class="font-bold px-1 py-0.5 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/30">SELECTIVE REPEAT</span>
+                <span class="text-zinc-500 font-sans-body">Ws=Wr=8 frame buffers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 PHYSICAL SERVER RACK CARDS (WHITE & ORANGE HUD) -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3.5 font-mono" id="nodeCardsGrid">
+          <!-- Populated dynamically: Node A, B, C, D, E -->
+        </div>
+
+        <!-- BLUEPRINT SVG TOPOLOGY CANVAS -->
+        <div class="cyber-panel p-6 relative min-h-[380px] flex items-center justify-center hud-corner cyber-grid-dense bg-[#ffffff]">
+          <div class="absolute top-3 left-4 text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#ff3b00]"></span>
+            <span>TOPOLOGY FABRIC BUS OVERLAY // LIVE PACKET FLOW</span>
+          </div>
+
+          <svg id="meshSvg" viewBox="0 0 940 330" class="w-full h-full max-h-[350px]">
+            <!-- Links Layer -->
+            <g id="linksGroup"></g>
+
+            <!-- Node A (Source - ID 0) -->
+            <g transform="translate(100, 165)" class="cursor-pointer">
+              <rect x="-60" y="-32" width="120" height="64" rx="3" fill="#ffffff" stroke="#121316" stroke-width="2" class="shadow-[2px_2px_0px_#121316]" />
+              <rect x="-60" y="-32" width="6" height="64" fill="#087a38" />
+              <text y="-8" text-anchor="middle" fill="#121316" font-weight="900" font-size="13" font-family="'JetBrains Mono', monospace">NODE A</text>
+              <text y="8" text-anchor="middle" fill="#087a38" font-weight="bold" font-size="9" font-family="'JetBrains Mono', monospace">INGRESS :51820</text>
+              <text y="20" text-anchor="middle" fill="#71717a" font-size="8" font-family="'JetBrains Mono', monospace">SOURCE GATEWAY</text>
+            </g>
+
+            <!-- Node B (Core - ID 1) -->
+            <g transform="translate(320, 65)" class="cursor-pointer">
+              <rect id="svgCardB" x="-60" y="-32" width="120" height="64" rx="3" fill="#ffffff" stroke="#121316" stroke-width="2" class="shadow-[2px_2px_0px_#121316]" />
+              <rect id="svgCardStripB" x="-60" y="-32" width="6" height="64" fill="#ff3b00" />
+              <text y="-8" text-anchor="middle" fill="#121316" font-weight="900" font-size="13" font-family="'JetBrains Mono', monospace">NODE B</text>
+              <text y="8" text-anchor="middle" fill="#ff3b00" font-weight="bold" font-size="9" font-family="'JetBrains Mono', monospace">TRANSIT :51821</text>
+              <text y="20" text-anchor="middle" fill="#71717a" font-size="8" font-family="'JetBrains Mono', monospace">CORE SWITCH</text>
+            </g>
+
+            <!-- Node C (Core - ID 2) -->
+            <g transform="translate(620, 65)" class="cursor-pointer">
+              <rect id="svgCardC" x="-60" y="-32" width="120" height="64" rx="3" fill="#ffffff" stroke="#121316" stroke-width="2" class="shadow-[2px_2px_0px_#121316]" />
+              <rect id="svgCardStripC" x="-60" y="-32" width="6" height="64" fill="#ff3b00" />
+              <text y="-8" text-anchor="middle" fill="#121316" font-weight="900" font-size="13" font-family="'JetBrains Mono', monospace">NODE C</text>
+              <text y="8" text-anchor="middle" fill="#ff3b00" font-weight="bold" font-size="9" font-family="'JetBrains Mono', monospace">TRANSIT :51822</text>
+              <text y="20" text-anchor="middle" fill="#71717a" font-size="8" font-family="'JetBrains Mono', monospace">CORE SWITCH</text>
+            </g>
+
+            <!-- Node D (Bypass - ID 3) -->
+            <g transform="translate(470, 265)" class="cursor-pointer">
+              <rect id="svgCardD" x="-60" y="-32" width="120" height="64" rx="3" fill="#ffffff" stroke="#121316" stroke-width="2" class="shadow-[2px_2px_0px_#121316]" />
+              <rect id="svgCardStripD" x="-60" y="-32" width="6" height="64" fill="#121316" />
+              <text y="-8" text-anchor="middle" fill="#121316" font-weight="900" font-size="13" font-family="'JetBrains Mono', monospace">NODE D</text>
+              <text id="svgTextDPort" y="8" text-anchor="middle" fill="#121316" font-weight="bold" font-size="9" font-family="'JetBrains Mono', monospace">BYPASS :51823</text>
+              <text id="svgTextDRole" y="20" text-anchor="middle" fill="#71717a" font-size="8" font-family="'JetBrains Mono', monospace">ALTERNATE PATH</text>
+            </g>
+
+            <!-- Node E (Destination - ID 4) -->
+            <g transform="translate(840, 165)" class="cursor-pointer">
+              <rect x="-60" y="-32" width="120" height="64" rx="3" fill="#ffffff" stroke="#121316" stroke-width="2" class="shadow-[2px_2px_0px_#121316]" />
+              <rect x="-60" y="-32" width="6" height="64" fill="#087a38" />
+              <text y="-8" text-anchor="middle" fill="#121316" font-weight="900" font-size="13" font-family="'JetBrains Mono', monospace">NODE E</text>
+              <text y="8" text-anchor="middle" fill="#087a38" font-weight="bold" font-size="9" font-family="'JetBrains Mono', monospace">EGRESS :51824</text>
+              <text y="20" text-anchor="middle" fill="#71717a" font-size="8" font-family="'JetBrains Mono', monospace">DESTINATION</text>
+            </g>
+          </svg>
+        </div>
+
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 2: INTERACTIVE AI NETOPS COPILOT (WHITE & ORANGE HUD CHAT) -->
+      <!-- =================================================================== -->
+      <section id="view-copilot" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="bot" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>NETOPS AUTONOMOUS COPILOT (GROQ LLAMA-3.3-70B)</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-[#ff3b00] text-white font-bold">REASONING ENGINE</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Audits real-time Link-State topology, FastMCP telemetry, and packet buffers via natural language.
+              </p>
+            </div>
+          </div>
+          <span class="text-xs text-zinc-500 font-mono">Grounded Live Context · Zero Hallucinations</span>
+        </div>
+
+        <!-- Quick Question Suggestions -->
+        <div class="flex flex-wrap gap-2 text-xs font-mono">
+          <span class="text-zinc-500 text-[11px] font-bold flex items-center gap-1">// AUDIT PROBES:</span>
+          <button onclick="askCopilot('Why did you choose to reroute traffic through Node D?')" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-2.5 py-1 text-[11px] font-bold transition shadow-[1px_1px_0px_#121316]">
+            ⚡ Why reroute through Node D?
+          </button>
+          <button onclick="askCopilot('Explain the difference between Selective Repeat and Go-Back-N in our current mesh.')" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-2.5 py-1 text-[11px] font-bold transition shadow-[1px_1px_0px_#121316]">
+            🔄 Selective Repeat vs Go-Back-N
+          </button>
+          <button onclick="askCopilot('Why is production AI required instead of simple Dijkstra?')" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-2.5 py-1 text-[11px] font-bold transition shadow-[1px_1px_0px_#121316]">
+            🤖 Why use AI instead of Dijkstra?
+          </button>
+          <button onclick="askCopilot('Explain why Node D was quarantined for a Byzantine attack.')" class="bg-white hover:bg-[#ff3b00] hover:text-white text-[#ff3b00] border border-[#ff3b00] px-2.5 py-1 text-[11px] font-bold transition shadow-[1px_1px_0px_#ff3b00]">
+            ☣️ Byzantine Attack & Zero-Trust
+          </button>
+        </div>
+
+        <!-- Chat History Window -->
+        <div id="copilotChatHistory" class="flex-1 bg-[#f8f8fa] p-4 font-mono text-xs overflow-y-auto max-h-[460px] border border-[#121316] space-y-3.5 shadow-inner">
+          <div class="bg-white p-4 border border-[#121316] shadow-[2px_2px_0px_#121316] text-zinc-800 leading-relaxed">
+            <div class="text-[#ff3b00] font-black text-[10px] mb-1.5 flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>GROQ NETOPS COPILOT // ONLINE</span>
+            </div>
+            Hello! I am your Autonomous NetOps AI Engineer for AegisMesh SDN. I continuously monitor real-time link statistics, 
+            packet error rates, and the Link-State Database across all 5 nodes. 
+            Ask me any technical question about routing decisions, Dijkstra convergence, Selective Repeat ARQ window states, 
+            or Byzantine zero-trust quarantine policies!
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="flex gap-2">
+          <input id="copilotInput" type="text" placeholder="Ask AI Copilot: 'Why did you reroute?', 'Explain link health'..." 
+                 class="flex-1 bg-white border border-[#121316] px-4 py-2.5 text-xs font-mono font-bold text-[#121316] focus:outline-none focus:border-[#ff3b00] shadow-[2px_2px_0px_#121316]"
+                 onkeydown="if(event.key==='Enter') sendCopilotChat()">
+          <button onclick="sendCopilotChat()" class="bg-[#ff3b00] hover:bg-[#e03400] text-white font-black px-6 py-2.5 text-xs font-mono transition flex items-center gap-1.5 border border-[#121316] shadow-[2px_2px_0px_#121316]">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>ASK AI</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 3: AUTOMATED SRE INCIDENT POST-MORTEMS & RCA -->
+      <!-- =================================================================== -->
+      <section id="view-postmortem" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="file-text" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>AUTOMATED SRE INCIDENT POST-MORTEMS (RCA)</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#ff3b00] text-white font-bold">SEV-1 PRODUCTION</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Machine-compiled forensic engineering reports with MTTD, MTTR, and MITRE ATT&CK mapping.
+              </p>
+            </div>
+          </div>
+          <button onclick="generateFreshReport()" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>GENERATE LIVE REPORT</span>
+          </button>
+        </div>
+
+        <div id="postmortemsContainer" class="flex-1 overflow-y-auto max-h-[560px] space-y-4">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 4: WIRE PACKET DISSECTOR (WIRESHARK INSPECTION) -->
+      <!-- =================================================================== -->
+      <section id="view-dissector" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="binary" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>LIVE WIRE PACKET DISSECTOR (WIRESHARK-STYLE)</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#121316] text-white font-bold">L2-L7 DECODER</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Decodes 0x7E Framing Delimiters, 9-Byte Header, 0x7D Byte-Stuffing, and 32-bit CRC.
+              </p>
+            </div>
+          </div>
+          <span class="text-xs text-zinc-500">Live Captures Streamed Over WebSocket</span>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4 flex-1">
+          <!-- Packet Table (7 Cols) -->
+          <div class="col-span-12 xl:col-span-7 bg-white border border-[#121316] shadow-[2px_2px_0px_#121316] overflow-hidden flex flex-col">
+            <div class="grid grid-cols-12 bg-[#f8f8fa] px-3 py-2 text-[10px] font-black text-zinc-600 uppercase tracking-wider border-b border-[#121316]">
+              <span class="col-span-1">#</span>
+              <span class="col-span-2">Time</span>
+              <span class="col-span-2">Flow</span>
+              <span class="col-span-2">Type</span>
+              <span class="col-span-1">Seq</span>
+              <span class="col-span-2">CRC-32</span>
+              <span class="col-span-2 text-right">Integrity</span>
+            </div>
+            <div id="packetTableBody" class="flex-1 overflow-y-auto max-h-[380px] divide-y divide-zinc-200 text-[11px]">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Hex Dump & Field Breakdown (5 Cols) -->
+          <div class="col-span-12 xl:col-span-5 bg-white border border-[#121316] shadow-[2px_2px_0px_#121316] p-4 flex flex-col text-xs">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#121316] text-[11px] font-black text-zinc-600 uppercase">
+              <span>Selected Frame Dissection</span>
+              <span id="inspectFrameId" class="text-[#ff3b00]">Frame #1</span>
+            </div>
+
+            <!-- Field Breakdown Tree -->
+            <div id="inspectFields" class="space-y-1.5 text-[11px] mb-3 text-zinc-800">
+              <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+                <span class="text-zinc-500">Frame Delimiters:</span>
+                <span class="text-[#087a38] font-black">0x7E (Start) ... 0x7E (End)</span>
+              </div>
+              <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+                <span class="text-zinc-500">Addressing:</span>
+                <span class="text-[#ff3b00] font-black">Src: Node A (0) → Dst: Node E (4)</span>
+              </div>
+              <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+                <span class="text-zinc-500">Seq / Ack / Len:</span>
+                <span class="text-[#121316] font-black">Seq: 12 | Ack: 0 | Len: 19B</span>
+              </div>
+              <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+                <span class="text-zinc-500">CRC-32 Checksum:</span>
+                <span class="text-[#087a38] font-black">0x8F4A12B0 (MATCHED)</span>
+              </div>
+            </div>
+
+            <!-- Raw Hex Dump Canvas -->
+            <span class="text-[10px] text-zinc-600 font-black uppercase mb-1 block">// RAW WIRE BYTES (HEX & ASCII)</span>
+            <pre id="inspectHexDump" class="bg-[#121316] text-white p-3 text-[10px] border border-[#121316] flex-1 overflow-x-auto whitespace-pre leading-relaxed shadow-inner">
+0000   7e 00 04 01 00 0c 00 00 00 13 44 41 54 41 5f 43   ~.........DATA_C
+0010   48 55 4e 4b 5f 30 30 31 32 8f 4a 12 b0 7e         HUNK_0012.J..~</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 5: SELECTIVE REPEAT ARQ SLIDING BUFFER VISUALIZER -->
+      <!-- =================================================================== -->
+      <section id="view-arq" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-6 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="repeat" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>SELECTIVE REPEAT ARQ SLIDING WINDOW (Ws = Wr = 8)</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#087a38] text-white font-bold">FLOW CONTROL</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Independent Per-Frame Retransmission Timers (1.0s) · Out-of-Order Receiver Buffering.
+              </p>
+            </div>
+          </div>
+          <span class="text-xs text-zinc-500">Sequence Space: 0 .. 65535</span>
+        </div>
+
+        <!-- SENDER WINDOW SLOTS -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-black text-[#121316] flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-[#ff3b00]"></span>
+              <span>NODE A SENDER SLIDING WINDOW BUFFER (8 IN-FLIGHT SLOTS)</span>
+            </span>
+            <span class="text-[11px] text-zinc-500 font-bold">Window Size: 8 Frames</span>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-8 gap-3" id="senderWindowGrid">
+            <!-- 8 Dynamic Slots -->
+          </div>
+        </div>
+
+        <!-- COMPARATIVE PROTOCOL ANALYSIS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-[#f8f8fa] p-4 border border-[#121316] shadow-[2px_2px_0px_#121316]">
+          <div class="border-r border-zinc-300 pr-4">
+            <span class="text-[#087a38] font-black block mb-1">✓ Our System: Selective Repeat (SR)</span>
+            <p class="text-zinc-700 text-[11px] leading-relaxed font-sans-body">
+              Buffers out-of-order frames at the receiver. If frame #3 drops, <strong>only frame #3 is retransmitted</strong>. 
+              The channel utilization remains at <strong>98.6%</strong>, and ongoing video/data streams experience no congestion collapse.
+            </p>
+          </div>
+          <div>
+            <span class="text-[#ff3b00] font-black block mb-1">✗ Outdated Alternative: Go-Back-N (GBN)</span>
+            <p class="text-zinc-700 text-[11px] leading-relaxed font-sans-body">
+              Discards all successfully received out-of-order frames. If frame #3 drops, sender must redundantly retransmit 
+              #3, #4, #5, #6, #7, choking wireless mesh bandwidth by over 400%.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 6: LINK-STATE DATABASE (LSDB) & DIJKSTRA FIB -->
+      <!-- =================================================================== -->
+      <section id="view-routing" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="git-fork" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>LINK-STATE DATABASE (LSDB) & FORWARDING TABLE (FIB)</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#121316] text-white font-bold">O(E log V)</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Synchronized 5x5 Adjacency Cost Matrix and Node A Routing Table calculated via Dijkstra.
+              </p>
+            </div>
+          </div>
+          <span class="text-xs text-zinc-500">Dijkstra Shortest Path Engine</span>
+        </div>
+
+        <div class="grid grid-cols-12 gap-5 flex-1">
+          <!-- 5x5 Matrix (6 Cols) -->
+          <div class="col-span-12 md:col-span-6 bg-white p-4 border border-[#121316] shadow-[2px_2px_0px_#121316] flex flex-col">
+            <span class="text-xs font-black uppercase text-zinc-600 tracking-wider mb-2.5 block">// 5x5 ADJACENCY COST MATRIX</span>
+            <div class="overflow-x-auto my-auto">
+              <table class="w-full text-center text-xs">
+                <thead>
+                  <tr class="text-zinc-500 border-b border-[#121316]">
+                    <th class="p-2"></th>
+                    <th class="p-2 text-[#ff3b00] font-black">Node A</th>
+                    <th class="p-2 text-[#ff3b00] font-black">Node B</th>
+                    <th class="p-2 text-[#ff3b00] font-black">Node C</th>
+                    <th class="p-2 text-[#121316] font-black">Node D</th>
+                    <th class="p-2 text-[#087a38] font-black">Node E</th>
+                  </tr>
+                </thead>
+                <tbody id="matrixTableBody" class="divide-y divide-zinc-200 text-zinc-800">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FIB Table (6 Cols) -->
+          <div class="col-span-12 md:col-span-6 bg-white p-4 border border-[#121316] shadow-[2px_2px_0px_#121316] flex flex-col">
+            <span class="text-xs font-black uppercase text-zinc-600 tracking-wider mb-2.5 block">// NODE A FORWARDING TABLE (FIB)</span>
+            <div class="space-y-2 overflow-y-auto max-h-[300px]" id="fibTableBody">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 7: DYNAMIC ACL & ZERO-TRUST SECURITY -->
+      <!-- =================================================================== -->
+      <section id="view-acl" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>DYNAMIC ACL & ZERO-TRUST FIREWALL TABLE</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#ff3b00] text-white font-bold">STATEFUL RULES</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                AI-synthesized Deep Packet Inspection (DPI) flow rules compiled into userspace firewalls.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-[#121316] shadow-[2px_2px_0px_#121316] overflow-hidden">
+          <div class="grid grid-cols-12 bg-[#f8f8fa] px-4 py-2.5 text-[10px] font-black text-zinc-600 uppercase tracking-wider border-b border-[#121316]">
+            <span class="col-span-2">RULE ID</span>
+            <span class="col-span-3">SIGNATURE / PATTERN</span>
+            <span class="col-span-2">ACTION</span>
+            <span class="col-span-3">SECURITY RATIONALE</span>
+            <span class="col-span-2 text-right">STATUS</span>
+          </div>
+          <div id="aclTableBody" class="divide-y divide-zinc-200 text-xs">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 8: INTERACTIVE P2P PACKET INJECTOR & SOCKET TERMINAL -->
+      <!-- =================================================================== -->
+      <section id="view-p2p" class="cyber-panel p-6 hud-corner flex-1 flex flex-col space-y-4 hidden font-mono">
+        <div class="flex items-center justify-between pb-3 border-b border-[#121316]">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 bg-[#121316] text-white flex items-center justify-center font-bold text-xs border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="terminal" class="w-4 h-4 text-[#ff3b00]"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-[#121316] tracking-wider flex items-center gap-2">
+                <span>INTERACTIVE PEER-TO-PEER SOCKET TRANSMITTER</span>
+                <span class="text-[9px] px-2 py-0.5 bg-[#121316] text-white font-bold">RAW UDP</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 font-sans-body">
+                Crafts binary frames, executes byte-stuffing and CRC-32, and pushes directly into Node A socket.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col space-y-4">
+          <!-- Terminal Logs -->
+          <div id="p2pTerminalLogs" class="flex-1 bg-[#121316] text-white p-4 text-xs overflow-y-auto max-h-[340px] space-y-1.5 shadow-inner border border-[#121316]">
+            <div class="text-zinc-400">[SYSTEM] Raw UDP socket transmitter initialized (:51820). Ready to inject binary frames.</div>
+          </div>
+
+          <!-- Input Controls -->
+          <div class="flex gap-2">
+            <select id="p2pDestSelect" class="bg-white border border-[#121316] px-3 py-2 text-xs font-bold text-[#121316] shadow-[2px_2px_0px_#121316]">
+              <option value="E">Dest: Node E (:51824)</option>
+              <option value="B">Dest: Node B (:51821)</option>
+              <option value="C">Dest: Node C (:51822)</option>
+              <option value="D">Dest: Node D (:51823)</option>
+            </select>
+            <input id="p2pMessageInput" type="text" placeholder="Type message to slice, frame (0x7E), checksum, and transmit..." 
+                   class="flex-1 bg-white border border-[#121316] px-4 py-2 text-xs font-bold text-[#121316] focus:outline-none focus:border-[#ff3b00] shadow-[2px_2px_0px_#121316]"
+                   onkeydown="if(event.key==='Enter') sendCustomPacket()">
+            <button onclick="sendCustomPacket()" class="bg-[#121316] hover:bg-[#ff3b00] text-white font-black px-6 py-2 text-xs transition flex items-center gap-1.5 border border-[#121316] shadow-[2px_2px_0px_#ff3b00]">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>INJECT FRAME</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- EXAMINER CHAOS FAULT INJECTION CONTROLS (ALWAYS VISIBLE AT BOTTOM) -->
+      <!-- =================================================================== -->
+      <footer class="cyber-panel p-4 font-mono hud-corner bg-white">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4 text-[#ff3b00]"></i>
+            <h3 class="text-xs font-black uppercase tracking-wider text-[#121316]">
+              CHAOS ENGINEERING & FAULT INJECTION CONTROLS (EXAMINER ACTIONS)
+            </h3>
+          </div>
+          <span class="text-[11px] text-zinc-500 font-bold">
+            Simulate physical wire cuts or Byzantine rogue node packet corruption live
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-2.5 text-xs">
+          <button onclick="triggerAction('/api/chaos/sever')" class="bg-white hover:bg-[#ff3b00] hover:text-white text-[#ff3b00] border border-[#ff3b00] px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#ff3b00]">
+            <span>⚡ Cut Link B-C</span>
+          </button>
+
+          <button onclick="triggerAction('/api/chaos/degrade')" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <span>⚠️ 80% Loss B-C</span>
+          </button>
+
+          <button onclick="triggerAction('/api/chaos/rogue')" class="bg-[#ff3b00] hover:bg-[#e03400] text-white border border-[#121316] px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <span>☣️ Attack Node D</span>
+          </button>
+
+          <button onclick="triggerAction('/api/chaos/heal')" class="bg-[#087a38] hover:bg-[#06632d] text-white border border-[#121316] px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <span>🤖 Groq AI Heal</span>
+          </button>
+
+          <button onclick="switchTab('postmortem')" class="bg-white hover:bg-[#121316] hover:text-white text-[#121316] border border-[#121316] px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <span>📄 SRE Post-Mortem</span>
+          </button>
+
+          <button onclick="triggerAction('/api/chaos/restore')" class="bg-[#f8f8fa] hover:bg-[#121316] hover:text-white text-[#121316] border border-zinc-400 px-3 py-2.5 font-black transition flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#121316]">
+            <span>🔄 Restore Fabric</span>
+          </button>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT LOGIC, WEBSOCKET STREAMING & DECRYPT ANIMATIONS -->
+  <!-- ===================================================================== -->
+  <script>
+    lucide.createIcons();
+
+    // DecryptText Scramble Effect implementation
+    const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_#@*&%:;<>~/+!";
+    function runDecryptText(elementId, finalText, speed = 25) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      let iteration = 0;
+      const interval = setInterval(() => {
+        el.innerText = finalText
+          .split("")
+          .map((char, index) => {
+            if (char === " " || char === "/" || char === ":" || char === "-") return char;
+            if (index < iteration) return finalText[index];
+            return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+          })
+          .join("");
+
+        if (iteration >= finalText.length) {
+          clearInterval(interval);
+        }
+        iteration += 1 / 2;
+      }, speed);
+    }
+
+    // Trigger initial decrypt animations
+    runDecryptText("breadcrumbTitle", "AEGIS-MESH SDN // AUTONOMOUS COMMAND CENTER", 20);
+    runDecryptText("heroHeadline", "Zero-Trust Mesh Command Center", 25);
+
+    let currentTab = 'noc';
+    const TABS = ['noc', 'copilot', 'postmortem', 'dissector', 'arq', 'routing', 'acl', 'p2p'];
+    const TAB_BREADCRUMBS = {
+      noc: { tag: "SYS://OVERVIEW", title: "TOPOLOGY NOC // DISTRIBUTED MESH FABRIC" },
+      copilot: { tag: "AI://COPILOT", title: "GROQ LLAMA-3.3-70B // NETOPS REASONING CHAT" },
+      postmortem: { tag: "AUDIT://SRE", title: "FORENSIC INCIDENT REPORTS // ROOT CAUSE ANALYSIS" },
+      dissector: { tag: "L2-L7://DISSECT", title: "WIRESHARK WIRE DISSECTOR // 0x7E HEX DUMP" },
+      arq: { tag: "BUFFER://ARQ", title: "SELECTIVE REPEAT ARQ // Ws=Wr=8 SLIDING WINDOW" },
+      routing: { tag: "LSDB://DIJKSTRA", title: "LINK-STATE MATRIX & FIB FORWARDING TABLE" },
+      acl: { tag: "SECURITY://ZTRUST", title: "DYNAMIC ACL & DEEP PACKET INSPECTION" },
+      p2p: { tag: "SOCKET://UDP", title: "RAW UDP SOCKET TRANSMITTER & TERMINAL" }
+    };
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      TABS.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const view = document.getElementById(`view-${t}`);
+        if (!btn || !view) return;
+
+        if (t === tabId) {
+          btn.className = "w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border bg-[#121316] text-white border-[#121316] shadow-[2px_2px_0px_#ff3b00]";
+          view.classList.remove('hidden');
+        } else {
+          btn.className = "w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border border-transparent bg-white text-[#121316] hover:border-[#121316] hover:bg-[#f2f2f5]";
+          view.classList.add('hidden');
+        }
+      });
+
+      const info = TAB_BREADCRUMBS[tabId] || { tag: "SYS://OVERVIEW", title: "COMMAND CENTER" };
+      runDecryptText("breadcrumbTag", info.tag, 20);
+      runDecryptText("breadcrumbTitle", info.title, 15);
+      lucide.createIcons();
+    }
+
+    // Auto-select tab if specified in URL query (e.g. /dashboard?tab=copilot)
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedTab = urlParams.get('tab');
+    if (requestedTab && TABS.includes(requestedTab)) {
+      switchTab(requestedTab);
+    }
+
+    // Node Coords on SVG Bus
+    const NODE_COORDS = {
+      0: { x: 100, y: 165, name: "A" },
+      1: { x: 320, y: 65,  name: "B" },
+      2: { x: 620, y: 65,  name: "C" },
+      3: { x: 470, y: 265, name: "D" },
+      4: { x: 840, y: 165, name: "E" },
+    };
+
+    const NAME_TO_ID = { "A": 0, "B": 1, "C": 2, "D": 3, "E": 4 };
+
+    // Dynamic Live Telemetry Simulation
+    setInterval(() => {
+      const tokEl = document.getElementById("telemetryTokSpeed");
+      if (tokEl) {
+        tokEl.innerText = (180 + Math.random() * 9).toFixed(1);
+      }
+    }, 2500);
+
+    // WebSocket connection
+    let ws;
+    function connectWS() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        renderDashboard(data);
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWS, 1500);
+      };
+    }
+
+    connectWS();
+
+    function renderDashboard(data) {
+      const path = data.active_path || ["A", "B", "C", "E"];
+      const pathStr = path.join(" → ");
+      
+      // 1. Top Badges
+      document.getElementById("routeBadge").innerText = pathStr;
+      document.getElementById("costBadge").innerText = data.active_path_cost || "3";
+      document.getElementById("deliveredBadge").innerText = `${data.delivered_count || 0} pkts`;
+
+      // 2. Render 5 Enterprise Node Cards in White/Orange Theme
+      const cardsGrid = document.getElementById("nodeCardsGrid");
+      if (cardsGrid && data.node_cards) {
+        cardsGrid.innerHTML = data.node_cards.map(nc => {
+          const isQuarantined = nc.is_quarantined;
+          const isInPath = nc.in_path;
+          
+          let borderClass = isInPath ? "border-[#ff3b00] shadow-[3px_3px_0px_#ff3b00]" : "border-[#121316] shadow-[2px_2px_0px_#121316]";
+          if (isQuarantined) borderClass = "border-[#ff2a3b] bg-[#fff5f5] shadow-[3px_3px_0px_#ff2a3b]";
+
+          let statusBadge = `<span class="px-1.5 py-0.2 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/40 text-[9px] font-black">ONLINE</span>`;
+          if (isQuarantined) {
+            statusBadge = `<span class="px-1.5 py-0.2 bg-[#ff3b00] text-white border border-[#121316] text-[9px] font-black">QUARANTINED</span>`;
+          } else if (isInPath) {
+            statusBadge = `<span class="px-1.5 py-0.2 bg-[#fff2eb] text-[#ff3b00] border border-[#ff3b00]/40 text-[9px] font-black">ACTIVE PATH</span>`;
+          }
+
+          return `
+            <div class="cyber-panel p-3 border ${borderClass} laser-sweep hud-corner bg-white">
+              <div class="flex items-center justify-between pb-1.5 border-b border-zinc-200 mb-2">
+                <span class="font-black text-[#121316] text-xs">NODE ${nc.name}</span>
+                ${statusBadge}
+              </div>
+              <div class="space-y-1 text-[10px] text-zinc-600 font-bold">
+                <div class="flex justify-between">
+                  <span>Role:</span>
+                  <span class="text-[#121316]">${nc.role}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Socket:</span>
+                  <span class="text-[#ff3b00]">:${nc.port} UDP</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Tx / Rx:</span>
+                  <span class="text-[#087a38]">${nc.tx} / ${nc.rx} pkts</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // 3. Render SVG Links with Cyber Orange/Red Flows
+      const linksGroup = document.getElementById("linksGroup");
+      if (linksGroup && data.edges) {
+        linksGroup.innerHTML = "";
+        const activePairs = new Set();
+        for (let i = 0; i < path.length - 1; i++) {
+          const u = NAME_TO_ID[path[i]];
+          const v = NAME_TO_ID[path[i+1]];
+          activePairs.add(`${Math.min(u, v)}-${Math.max(u, v)}`);
+        }
+
+        data.edges.forEach(edge => {
+          const uCoord = NODE_COORDS[edge.u];
+          const vCoord = NODE_COORDS[edge.v];
+          const pairKey = `${Math.min(edge.u, edge.v)}-${Math.max(edge.u, edge.v)}`;
+          const isActive = activePairs.has(pairKey);
+
+          let strokeColor = "#d6d6de";
+          let strokeWidth = "2.5";
+          let cssClass = "";
+
+          if (edge.is_severed) {
+            strokeColor = "#ff2a3b";
+            strokeWidth = "3.5";
+            cssClass = "flow-severed";
+          } else if (isActive) {
+            strokeColor = "#ff3b00";
+            strokeWidth = "4";
+            cssClass = "flow-active";
+          }
+
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", uCoord.x);
+          line.setAttribute("y1", uCoord.y);
+          line.setAttribute("x2", vCoord.x);
+          line.setAttribute("y2", vCoord.y);
+          line.setAttribute("stroke", strokeColor);
+          line.setAttribute("stroke-width", strokeWidth);
+          if (cssClass) line.setAttribute("class", cssClass);
+          linksGroup.appendChild(line);
+
+          // Midpoint Badge
+          const midX = (uCoord.x + vCoord.x) / 2;
+          const midY = (uCoord.y + vCoord.y) / 2 - 8;
+
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", midX);
+          text.setAttribute("y", midY);
+          text.setAttribute("fill", edge.is_severed ? "#ff2a3b" : (isActive ? "#ff3b00" : "#71717a"));
+          text.setAttribute("font-size", "10");
+          text.setAttribute("font-weight", "900");
+          text.setAttribute("font-family", "'JetBrains Mono', monospace");
+          text.setAttribute("text-anchor", "middle");
+          text.textContent = edge.is_severed ? "SEVERED ⚡ (cost: 9999)" : `Cost: ${edge.cost}`;
+          linksGroup.appendChild(text);
+        });
+      }
+
+      // 4. Update Node D SVG Card on Canvas
+      const svgCardD = document.getElementById("svgCardD");
+      const dQuarantined = data.node_cards && data.node_cards.find(c => c.id === 3 && c.is_quarantined);
+      if (svgCardD) {
+        if (dQuarantined) {
+          svgCardD.setAttribute("stroke", "#ff2a3b");
+          svgCardD.setAttribute("stroke-width", "3");
+          document.getElementById("svgCardStripD").setAttribute("fill", "#ff2a3b");
+          document.getElementById("svgTextDRole").textContent = "QUARANTINED ☣️";
+          document.getElementById("svgTextDRole").setAttribute("fill", "#ff2a3b");
+        } else {
+          svgCardD.setAttribute("stroke", "#121316");
+          svgCardD.setAttribute("stroke-width", "2");
+          document.getElementById("svgCardStripD").setAttribute("fill", "#121316");
+          document.getElementById("svgTextDRole").textContent = "ALTERNATE PATH";
+          document.getElementById("svgTextDRole").setAttribute("fill", "#71717a");
+        }
+      }
+
+      // 5. Update Wireshark Packet Table (Tab 4)
+      if (data.recent_packets && data.recent_packets.length > 0) {
+        const pTable = document.getElementById("packetTableBody");
+        pTable.innerHTML = data.recent_packets.slice().reverse().map(pkt => `
+          <div onclick="inspectPacket(${JSON.stringify(pkt).replace(/"/g, '&quot;')})" class="grid grid-cols-12 px-3 py-1.5 hover:bg-[#f8f8fa] cursor-pointer transition items-center font-bold">
+            <span class="col-span-1 text-zinc-500">${pkt.id}</span>
+            <span class="col-span-2 text-zinc-500 text-[10px]">${pkt.time}</span>
+            <span class="col-span-2 text-[#ff3b00]">${pkt.src} → ${pkt.dst}</span>
+            <span class="col-span-2 text-[#121316]">${pkt.type}</span>
+            <span class="col-span-1 text-zinc-700">${pkt.seq}</span>
+            <span class="col-span-2 text-zinc-500 text-[10px]">${pkt.crc}</span>
+            <span class="col-span-2 text-right"><span class="px-1.5 py-0.2 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/40 text-[9px] font-black">MATCHED</span></span>
+          </div>
+        `).join("");
+      }
+
+      // 6. Update ARQ Sliding Window Grid (Tab 5)
+      const windowGrid = document.getElementById("senderWindowGrid");
+      if (windowGrid) {
+        const curSeq = (data.recent_packets && data.recent_packets.length > 0) ? data.recent_packets[data.recent_packets.length-1].seq : 0;
+        let slotsHtml = "";
+        for (let i = 0; i < 8; i++) {
+          const s = (curSeq - 7 + i + 65535) % 65535;
+          const isAcked = i < 6;
+          slotsHtml += `
+            <div class="cyber-panel p-3 flex flex-col items-center justify-center font-mono ${isAcked ? 'border-[#087a38] bg-[#f4fbf6]' : 'border-[#ff3b00] bg-[#fffaf8] shadow-[2px_2px_0px_#ff3b00]'}">
+              <span class="text-[10px] font-bold text-zinc-500">Slot #${i}</span>
+              <span class="text-base font-black ${isAcked ? 'text-[#087a38]' : 'text-[#ff3b00]'}">Seq ${s}</span>
+              <span class="text-[9px] mt-1 px-1.5 py-0.2 font-black ${isAcked ? 'bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/40' : 'bg-[#ff3b00] text-white border border-[#121316]'}">${isAcked ? 'ACKED' : 'IN-FLIGHT'}</span>
+            </div>
+          `;
+        }
+        windowGrid.innerHTML = slotsHtml;
+      }
+
+      // 7. Update Link-State Matrix (Tab 6)
+      if (data.matrix) {
+        const mBody = document.getElementById("matrixTableBody");
+        mBody.innerHTML = data.matrix.map((row, idx) => `
+          <tr class="hover:bg-[#f8f8fa]">
+            <td class="p-2 font-black text-[#121316] border-r border-[#121316]">Node ${["A","B","C","D","E"][idx]}</td>
+            <td class="p-2 font-bold ${row[0] === 0 ? 'text-zinc-300' : 'text-[#087a38]'}">${row[0]}</td>
+            <td class="p-2 font-bold ${row[1] === 0 ? 'text-zinc-300' : (row[1] >= 9999 ? 'text-[#ff2a3b] font-black' : 'text-[#087a38]')}">${row[1]}</td>
+            <td class="p-2 font-bold ${row[2] === 0 ? 'text-zinc-300' : (row[2] >= 9999 ? 'text-[#ff2a3b] font-black' : 'text-[#087a38]')}">${row[2]}</td>
+            <td class="p-2 font-bold ${row[3] === 0 ? 'text-zinc-300' : 'text-[#121316]'}">${row[3]}</td>
+            <td class="p-2 font-bold ${row[4] === 0 ? 'text-zinc-300' : 'text-[#087a38]'}">${row[4]}</td>
+          </tr>
+        `).join("");
+      }
+
+      // 8. Update FIB Table (Tab 6)
+      if (data.fib_details) {
+        const fBody = document.getElementById("fibTableBody");
+        fBody.innerHTML = data.fib_details.map(entry => `
+          <div class="flex items-center justify-between p-2.5 bg-[#f8f8fa] border border-[#121316] shadow-[1px_1px_0px_#121316] text-xs">
+            <div>
+              <span class="text-[#121316] font-black">${entry.dest}</span>
+              <span class="text-zinc-500 block text-[10px] font-bold">Shortest Path Solved via Dijkstra</span>
+            </div>
+            <div class="text-right">
+              <span class="text-[#ff3b00] font-black">Next Hop: ${entry.next_hop}</span>
+              <span class="text-zinc-500 block text-[10px] font-bold">Cost: ${entry.cost}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 9. Update SRE Post-Mortems (Tab 3)
+      if (data.postmortems && data.postmortems.length > 0) {
+        const pmContainer = document.getElementById("postmortemsContainer");
+        pmContainer.innerHTML = data.postmortems.map(pm => `
+          <div class="cyber-panel p-5 hud-corner bg-white space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-[#121316]">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 bg-[#ff3b00] text-white border border-[#121316] text-[10px] font-black shadow-[1px_1px_0px_#121316]">${pm.severity}</span>
+                <span class="text-[#121316] font-black text-sm">${pm.title}</span>
+              </div>
+              <span class="text-zinc-500 text-xs font-bold">${pm.incident_id} · ${pm.timestamp}</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 text-xs bg-[#f8f8fa] p-3 border border-[#121316] shadow-[1px_1px_0px_#121316]">
+              <div>
+                <span class="text-zinc-500 font-bold block text-[10px]">MEAN TIME TO DETECT:</span>
+                <span class="text-[#ff3b00] font-black">${pm.mttd_ms} ms</span>
+              </div>
+              <div>
+                <span class="text-zinc-500 font-bold block text-[10px]">MEAN TIME TO REMEDIATE:</span>
+                <span class="text-[#087a38] font-black">${pm.mttr_ms} ms</span>
+              </div>
+              <div>
+                <span class="text-zinc-500 font-bold block text-[10px]">MITRE ATT&CK:</span>
+                <span class="text-[#121316] font-black">${pm.mitre_attack}</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-zinc-800 leading-relaxed font-sans-body">
+              <span class="text-[#121316] font-black block mb-1 uppercase font-mono text-[10px]">// ROOT CAUSE ANALYSIS (RCA):</span>
+              <p>${pm.root_cause_analysis}</p>
+            </div>
+
+            <div class="text-xs text-zinc-800 font-sans-body">
+              <span class="text-[#121316] font-black block mb-1 uppercase font-mono text-[10px]">// MITIGATION ACTIONS EXECUTED:</span>
+              <ul class="list-disc pl-4 space-y-0.5 text-zinc-600 text-[11px]">
+                ${pm.mitigation_executed.map(step => `<li>${step}</li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 10. Update Dynamic ACL Rules (Tab 7)
+      if (data.acls) {
+        const aclBody = document.getElementById("aclTableBody");
+        aclBody.innerHTML = data.acls.map(rule => `
+          <div class="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-[#f8f8fa] transition font-bold">
+            <span class="col-span-2 font-black text-[#ff3b00]">${rule.rule_id}</span>
+            <span class="col-span-3 text-zinc-800 text-[11px]">${rule.pattern}</span>
+            <span class="col-span-2 text-[#ff2a3b] font-black">${rule.action}</span>
+            <span class="col-span-3 text-zinc-600 text-[11px] font-sans-body">${rule.reason}</span>
+            <span class="col-span-2 text-right"><span class="px-2 py-0.5 bg-[#e7f7ed] text-[#087a38] border border-[#087a38]/40 text-[9px] font-black">${rule.status}</span></span>
+          </div>
+        `).join("");
+      }
+    }
+
+    // Wireshark Frame Inspector
+    function inspectPacket(pkt) {
+      document.getElementById("inspectFrameId").innerText = `Frame #${pkt.id}`;
+      document.getElementById("inspectHexDump").innerText = pkt.hex_dump;
+      document.getElementById("inspectFields").innerHTML = `
+        <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+          <span class="text-zinc-500">Frame Delimiters:</span>
+          <span class="text-[#087a38] font-black">0x7E (Start) ... 0x7E (End)</span>
+        </div>
+        <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+          <span class="text-zinc-500">Addressing:</span>
+          <span class="text-[#ff3b00] font-black">Src: Node ${pkt.src} → Dst: Node ${pkt.dst} (Hop: ${pkt.hop})</span>
+        </div>
+        <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+          <span class="text-zinc-500">Seq / Ack / Len:</span>
+          <span class="text-[#121316] font-black">Seq: ${pkt.seq} | Ack: ${pkt.ack} | Len: ${pkt.len}B</span>
+        </div>
+        <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+          <span class="text-zinc-500">CRC-32 Checksum:</span>
+          <span class="text-[#087a38] font-black">${pkt.crc} (MATCHED)</span>
+        </div>
+        <div class="flex justify-between bg-[#f8f8fa] p-1.5 border border-zinc-200">
+          <span class="text-zinc-500">Decoded Payload:</span>
+          <span class="text-[#121316] font-black truncate max-w-[220px]">${pkt.payload_text}</span>
+        </div>
+      `;
+    }
+
+    // Natural Language Copilot Chat
+    async function sendCopilotChat() {
+      const input = document.getElementById("copilotInput");
+      const query = input.value.trim();
+      if (!query) return;
+
+      appendChatMessage("user", query);
+      input.value = "";
+
+      try {
+        const res = await fetch("/api/copilot/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: query })
+        });
+        const data = await res.json();
+        appendChatMessage("agent", data.answer);
+      } catch (e) {
+        appendChatMessage("agent", "Error communicating with NetOps agent control plane.");
+      }
+    }
+
+    function askCopilot(question) {
+      document.getElementById("copilotInput").value = question;
+      sendCopilotChat();
+    }
+
+    function appendChatMessage(sender, text) {
+      const history = document.getElementById("copilotChatHistory");
+      const isUser = sender === "user";
+      const div = document.createElement("div");
+      div.className = isUser 
+        ? "bg-white p-3 border border-[#121316] shadow-[2px_2px_0px_#121316] ml-12 text-[#121316] font-bold" 
+        : "bg-[#121316] text-white p-4 border border-[#121316] shadow-[3px_3px_0px_#ff3b00] mr-8 leading-relaxed";
+
+      const header = isUser
+        ? `<div class="text-[#ff3b00] font-black text-[10px] mb-1 uppercase">// OPERATOR INQUIRY</div>`
+        : `<div class="text-[#ff3b00] font-black text-[10px] mb-1.5 uppercase">// GROQ 70B REASONING OUTPUT</div>`;
+
+      div.innerHTML = `${header}<div class="${isUser ? '' : 'font-sans-body text-xs text-zinc-200'}">${text.replace(/\n/g, '<br>')}</div>`;
+      history.appendChild(div);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    // Trigger Chaos Actions
+    async function triggerAction(endpoint) {
+      try {
+        await fetch(endpoint, { method: "POST" });
+      } catch (err) {
+        console.error("Action error:", err);
+      }
+    }
+
+    // Generate Fresh SRE Post-Mortem
+    async function generateFreshReport() {
+      try {
+        await fetch("/api/sre/generate", { method: "POST" });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Custom Message Injection
+    async function sendCustomPacket() {
+      const dest = document.getElementById("p2pDestSelect").value;
+      const message = document.getElementById("p2pMessageInput").value || "Custom packet test";
+      const term = document.getElementById("p2pTerminalLogs");
+
+      try {
+        const res = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dest, message })
+        });
+        const data = await res.json();
+        const timeStr = new Date().toLocaleTimeString();
+        term.innerHTML += `
+          <div class="text-[#087a38] font-bold">[${timeStr}] [SENT] Injected frame to Node ${dest} via Next Hop ${data.next_hop} (Seq #${data.seq}): "${message}"</div>
+        `;
+        term.scrollTop = term.scrollHeight;
+        document.getElementById("p2pMessageInput").value = "";
+      } catch (err) {
+        console.error("Send error:", err);
+      }
+    }
+
+    async function saveGroqKey() {
+      const key = document.getElementById("groqInput").value.trim();
+      if (!key) return;
+      await fetch("/api/config/groq-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key })
+      });
+      alert("Groq API Key set successfully!");
+    }
+  </script>
+</body>
+</html>

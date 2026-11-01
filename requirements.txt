@@ -1,0 +1,6 @@
+# AegisMesh-AI Dependencies
+# Note: The core network data plane, routing, and demo run using standard Python library.
+# The following optional packages power the Model Context Protocol (MCP) server.
+
+fastmcp>=0.1.0
+pytest>=7.0.0
